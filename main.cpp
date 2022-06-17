@@ -34,7 +34,8 @@ using namespace cv;
 const char * inpath = "hall_monitor_cif.yuv";
 int width = 352, height = 288;
 #endif
-
+int uv_height = height>>1;
+int uv_width = width>>1;
 //const char * inpath = "1.yuv";
 //const char * inpath = "hall_monitor_cif.yuv";
 const char* outPath = "out.yuv";
@@ -121,6 +122,18 @@ int main() {
     }
     int frameNum = size / inFrameSize;
 
+
+    float ** Y_data = new float * [uv_height];
+    float ** U_data = new float * [uv_height];
+    float ** V_data = new float * [uv_height];
+
+    for (int row = 0; row<uv_height; row++){
+        Y_data[row] = new float [uv_width];
+        U_data[row] = new float [width];
+        V_data[row] = new float [width];
+    }
+
+
     for (int i = 0; i < frameNum; ++i) {
         //std::cout << "------------ current frame is ------------------ " << i << "  --------------\n" << std::endl;
         //for (int j = 0; j < inFrameSize; ++ j){
@@ -135,9 +148,45 @@ int main() {
                 memcpy(y_seq[ii].data, inBuffer + (ii) * inFrameSize, yFrameSize);
                 //std::cout<<rgbImage_seq[i].channels()<<" -             -- -        -"<<std::endl;
                 cv::cvtColor(yuvImage_seq[ii], rgbImage_seq[ii], COLOR_YUV2RGB_YV12);
-                rgbImage_seq[3].copyTo(rgbImage_current);
+                // --- fetch yuv data and do color noise reduction --- //
                 //std::cout<<rgbImage_seq[i].channels()<<" -             -- -        -"<<std::endl;
             }
+            ofstream Y_ds("/home/hong/3DNR/Python/Y_ds.txt"),U_ds("/home/hong/3DNR/Python/U_ds.txt"),V_ds("/home/hong/3DNR/Python/V_ds.txt");
+            cv::Mat y_seq0_ds;
+            y_seq0_ds.create(uv_height,uv_width,CV_8UC1);
+            cv::Size ds_size(uv_width,uv_height);
+            cv::resize(y_seq[0],y_seq0_ds,ds_size);
+            for(int row = 0; row<uv_height; row++)
+                for(int col = 0; col <uv_width; col++) {
+                    Y_ds<<(int)y_seq0_ds.at<uchar>(row, col);
+                    Y_ds<<" ";
+                    Y_data[row][col] = y_seq0_ds.at<uchar>(row, col);
+                    if (col==uv_width-1)
+                        Y_ds<<std::endl;
+                }
+            for(int row_uv = 0; row_uv<uv_height; row_uv++){
+                int row_buffer = row_uv>>1;
+                for(int col_buffer = 0; col_buffer<width; col_buffer++){
+                    int col_uv = col_buffer<uv_width?col_buffer:col_buffer-uv_width/2;
+                    U_data[row_uv][col_uv] = (int)inBuffer[width * height+row_buffer*width+col_buffer];
+                    V_data[row_uv][col_uv] = (int)inBuffer[width * height+width * height>>2+row_buffer*width+col_buffer];
+                    U_ds<<(int)inBuffer[width * height+row_buffer*width+col_buffer];
+                    U_ds<<" ";
+                    V_ds<<(int)inBuffer[width * height+width * height>>2+row_buffer*width+col_buffer];
+                    V_ds<<" ";
+                    if (col_uv==uv_width-1){
+                        U_ds<<std::endl;
+                        V_ds<<std::endl;
+                    }
+                }
+            }
+            Y_ds.close();
+            U_ds.close();
+            V_ds.close();
+            std::cout<<"out the ds yuv output"<<std::endl;
+            exit(0);
+            rgbImage_seq[3].copyTo(rgbImage_current);
+
         } else {
             // ------------- update the frame buffer and current frame -------------- //
             for (int ii = 1; ii < Nums; ++ii) {
