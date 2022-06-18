@@ -16,6 +16,6 @@ if(OPENMP_FOUND)
 endif()
 include_directories(Heads)
 #add_executable(${ect_NAME} ${DIR_SOURCE})
-set(SOURCE_FILES main.cpp display_flow.cpp display_flow.h optical_flow_related.cpp optical_flow_related.h Spatial_Temperal_Denoise.cpp Spatial_Temperal_Denoise.h svd_decomposition.cpp svd_decomposition.h PCADenoise.cpp PCADenoise.h)
+set(SOURCE_FILES main.cpp display_flow.cpp display_flow.h optical_flow_related.cpp optical_flow_related.h Spatial_Temperal_Denoise.cpp Spatial_Temperal_Denoise.h svd_decomposition.cpp svd_decomposition.h PCADenoise.cpp PCADenoise.h CNR_Spatial.cpp CNR_Spatial.h)
 add_executable(3DNR_OF ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})	#链接OpenCV库文件到cmake项目上

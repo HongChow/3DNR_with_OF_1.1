@@ -184,12 +184,11 @@ int main() {
             //            V_ds<<std::endl;
                     }
                 }
-
             //U_ds.close();
             //V_ds.close();
 
             //std::cout<<"test yuvImage Data: yuv_image[0].at<uchar>(0,0) = "<<(int)yuvImage_seq[0].at<uchar>(0,0)<<std::endl;
-            exit(0);
+//            exit(0);
             //－－－－－－－－－－－－－－－－－－－－－－－ 直接从inBuffer中获取ＵＶ的数据似乎有点问题Ｕ的数值是负数　－－－－－－－－－－－－－－－－－－－－－－－－－－//
 #if 0
             for(int row_uv = 0; row_uv<uv_height; row_uv++){
@@ -215,6 +214,8 @@ int main() {
             std::cout<<"out the ds yuv output"<<std::endl;
             exit(0);
 #endif
+            // －－－－－－－－－－－－－－－－－－－　Do Pre Color Noise Reduction －－－－－－－－－－－－－－－－－－－－　//
+
 
 
         } else {
@@ -312,7 +313,7 @@ int main() {
                 }
                 cv::split(rgbImage_current,CurrentImagesVectors);
                 auto beforeCoreTime = std::chrono::steady_clock::now();
-                //Spatial_Temperal_Denoise(rgbImageW_seq, rgbImage_current, R_Warped,G_Warped,B_Warped,para3D,Weights_Mask,OutPutImages);
+                Spatial_Temperal_Denoise(rgbImageW_seq, rgbImage_current, R_Warped,G_Warped,B_Warped,para3D,Weights_Mask,OutPutImages);
                 auto afterCoreTime = std::chrono::steady_clock::now();
                 double duration_millsecondCore = std::chrono::duration<double, std::milli>(afterCoreTime - beforeCoreTime).count();
                 std::cout <<"Spatial_Temperal_Denoise"<< duration_millsecondCore << "毫秒" << std::endl;

@@ -22,6 +22,7 @@ struct denoise_para{
    float osigma;
    float ofpca;
 };
+
 struct diffpatches {
     int i, j;
     double diff;
