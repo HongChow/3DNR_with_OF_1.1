@@ -167,13 +167,8 @@ int main() {
             for(int row_uv = 0; row_uv<uv_height; row_uv++){
                 int row_buffer = row_uv>>1;
                 int row_half_flag = row_uv%2;
-<<<<<<< HEAD
                 for(int col_uv = 0; col_uv<uv_width; col_uv++){
                     int col_buffer = row_half_flag==0?col_uv:col_uv+uv_width;
-=======
-                for(int col_buffer = 0; col_buffer<width; col_buffer++){
-                    int col_uv = col_buffer<uv_width?col_buffer:col_buffer-uv_width;
->>>>>>> 873468dfc9e932e15db430ee515b44220c469d19
                     U_data[row_uv][col_uv] = (int)inBuffer[width * height+row_buffer*width+col_buffer];
                     V_data[row_uv][col_uv] = (int)inBuffer[width * height+width * height>>2+row_buffer*width+col_buffer];
                     U_ds<<(int)inBuffer[width * height+row_buffer*width+col_buffer];
