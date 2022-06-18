@@ -129,8 +129,8 @@ int main() {
 
     for (int row = 0; row<uv_height; row++){
         Y_data[row] = new float [uv_width];
-        U_data[row] = new float [width];
-        V_data[row] = new float [width];
+        U_data[row] = new float [uv_width];
+        V_data[row] = new float [uv_width];
     }
 
 
@@ -166,8 +166,9 @@ int main() {
                 }
             for(int row_uv = 0; row_uv<uv_height; row_uv++){
                 int row_buffer = row_uv>>1;
+                int row_half_flag = row_uv%2;
                 for(int col_buffer = 0; col_buffer<width; col_buffer++){
-                    int col_uv = col_buffer<uv_width?col_buffer:col_buffer-uv_width/2;
+                    int col_uv = col_buffer<uv_width?col_buffer:col_buffer-uv_width;
                     U_data[row_uv][col_uv] = (int)inBuffer[width * height+row_buffer*width+col_buffer];
                     V_data[row_uv][col_uv] = (int)inBuffer[width * height+width * height>>2+row_buffer*width+col_buffer];
                     U_ds<<(int)inBuffer[width * height+row_buffer*width+col_buffer];
