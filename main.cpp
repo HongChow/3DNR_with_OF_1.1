@@ -151,19 +151,47 @@ int main() {
                 // --- fetch yuv data and do color noise reduction --- //
                 //std::cout<<rgbImage_seq[i].channels()<<" -             -- -        -"<<std::endl;
             }
-            ofstream Y_ds("/home/hong/3DNR/Python/Y_ds.txt"),U_ds("/home/hong/3DNR/Python/U_ds.txt"),V_ds("/home/hong/3DNR/Python/V_ds.txt");
+            rgbImage_seq[3].copyTo(rgbImage_current);
+// －－－－－－－－－－－－－－－　Convert the YUV420 Data to 2-D Array for Pre Color Noise Reduction －－－－－－－－－－－－－//
+            //ofstream Y_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/Y_ds.txt"),U_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/U_ds.txt"),V_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/V_ds.txt");
             cv::Mat y_seq0_ds;
             y_seq0_ds.create(uv_height,uv_width,CV_8UC1);
             cv::Size ds_size(uv_width,uv_height);
             cv::resize(y_seq[0],y_seq0_ds,ds_size);
             for(int row = 0; row<uv_height; row++)
                 for(int col = 0; col <uv_width; col++) {
-                    Y_ds<<(int)y_seq0_ds.at<uchar>(row, col);
-                    Y_ds<<" ";
-                    Y_data[row][col] = y_seq0_ds.at<uchar>(row, col);
-                    if (col==uv_width-1)
-                        Y_ds<<std::endl;
+            //        Y_ds<<(int)y_seq0_ds.at<uchar>(row, col);
+            //       Y_ds<<" ";
+                    Y_data[row][col] = (float)y_seq0_ds.at<uchar>(row, col);
+            //        if (col==uv_width-1)
+            //            Y_ds<<std::endl;
                 }
+            //Y_ds.close();
+            // －－－－－－－－－－－－－－－－－－－－－－－－－－－ 从yuvImage_seq中获取ＵＶ的数据　－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－//
+            for(int row_uv = 0; row_uv<uv_height; row_uv++){
+                int row_buffer = row_uv>>1;
+                int row_half_flag = row_uv%2;
+                for(int col_uv = 0; col_uv<uv_width; col_uv++){
+                    int col_buffer = row_half_flag==0?col_uv:col_uv+uv_width;
+                    U_data[row_uv][col_uv] = (float)yuvImage_seq[0].at<uchar>(1080+row_buffer, col_buffer);
+                    V_data[row_uv][col_uv] = (float)yuvImage_seq[0].at<uchar>(1350+row_buffer, col_buffer);;
+            //        U_ds<<(int)yuvImage_seq[0].at<uchar>(1080+row_buffer, col_buffer);
+            //        U_ds<<" ";
+            //        V_ds<<(int)yuvImage_seq[0].at<uchar>(1350+row_buffer, col_buffer);
+            //        V_ds<<" ";
+            //        if (col_uv==uv_width-1){
+            //            U_ds<<std::endl;
+            //            V_ds<<std::endl;
+                    }
+                }
+
+            //U_ds.close();
+            //V_ds.close();
+
+            //std::cout<<"test yuvImage Data: yuv_image[0].at<uchar>(0,0) = "<<(int)yuvImage_seq[0].at<uchar>(0,0)<<std::endl;
+            exit(0);
+            //－－－－－－－－－－－－－－－－－－－－－－－ 直接从inBuffer中获取ＵＶ的数据似乎有点问题Ｕ的数值是负数　－－－－－－－－－－－－－－－－－－－－－－－－－－//
+#if 0
             for(int row_uv = 0; row_uv<uv_height; row_uv++){
                 int row_buffer = row_uv>>1;
                 int row_half_flag = row_uv%2;
@@ -180,27 +208,14 @@ int main() {
                         V_ds<<std::endl;
                     }
                 }
-                /*
-                for(int col_buffer = 0; col_buffer<width; col_buffer++){
-                    int col_uv = col_buffer<uv_width?col_buffer:col_buffer-uv_width;
-                    U_data[row_uv][col_uv] = (int)inBuffer[width * height+row_buffer*width+col_buffer];
-                    V_data[row_uv][col_uv] = (int)inBuffer[width * height+width * height>>2+row_buffer*width+col_buffer];
-                    U_ds<<(int)inBuffer[width * height+row_buffer*width+col_buffer];
-                    U_ds<<" ";
-                    V_ds<<(int)inBuffer[width * height+width * height>>2+row_buffer*width+col_buffer];
-                    V_ds<<" ";
-                    if (col_uv==uv_width-1){
-                        U_ds<<std::endl;
-                        V_ds<<std::endl;
-                    }
-                }*/
             }
-            Y_ds.close();
+
             U_ds.close();
             V_ds.close();
             std::cout<<"out the ds yuv output"<<std::endl;
             exit(0);
-            rgbImage_seq[3].copyTo(rgbImage_current);
+#endif
+
 
         } else {
             // ------------- update the frame buffer and current frame -------------- //
