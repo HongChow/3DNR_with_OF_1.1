@@ -24,6 +24,7 @@
 #include  "display_flow.h"
 #include  "optical_flow_related.h"
 #include "Spatial_Temperal_Denoise.h"
+#include "CNR_Spatial.h"
 using namespace std;
 using namespace cv;
 #define CISTA
@@ -104,6 +105,10 @@ int main() {
     para3D.width = width;para3D.height = height; para3D.channels = 3; para3D.radius_Tem = middle;
     para3D.radius_block = 2; para3D.radius_search = 6;
     para3D.oflat = 0.85f;para3D.osigma=5.0f;para3D.ofpca = 1.8f;
+    //===== Param init for Spatial CNR ===== //
+    CNR_Spatial_para cnr_para;
+    cnr_para.iWidth = width;cnr_para.iHeight = height; cnr_para.ratio_x = 2; cnr_para.ratio_y=2; cnr_para.r_patch_v = 12;cnr_para.r_patch_h=12;cnr_para.esp=72;
+
     // --------- allocate memory for adjacent frames -------- //
     for (int i = 0; i < Nums; i++) {
         yuvImage_seq[i].create(height * 3 / 2, width, CV_8U);
