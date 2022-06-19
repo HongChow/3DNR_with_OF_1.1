@@ -35,6 +35,7 @@ using namespace cv;
 const char * inpath = "hall_monitor_cif.yuv";
 int width = 352, height = 288;
 #endif
+#define DEBUG_CNR
 int uv_height = height>>1;
 int uv_width = width>>1;
 //const char * inpath = "1.yuv";
@@ -107,7 +108,7 @@ int main() {
     para3D.oflat = 0.85f;para3D.osigma=5.0f;para3D.ofpca = 1.8f;
     //===== Param init for Spatial CNR ===== //
     CNR_Spatial_para cnr_para;
-    cnr_para.iWidth = width;cnr_para.iHeight = height; cnr_para.ratio_x = 2; cnr_para.ratio_y=2; cnr_para.r_patch_v = 12;cnr_para.r_patch_h=12;cnr_para.esp=72;
+    cnr_para.iWidth = width>>1;cnr_para.iHeight = height>>1; cnr_para.ratio_x = 2; cnr_para.ratio_y=2; cnr_para.r_patch_v = 12;cnr_para.r_patch_h=12;cnr_para.esp=72;
 
     // --------- allocate memory for adjacent frames -------- //
     for (int i = 0; i < Nums; i++) {
@@ -131,11 +132,15 @@ int main() {
     float ** Y_data = new float * [uv_height];
     float ** U_data = new float * [uv_height];
     float ** V_data = new float * [uv_height];
+    float ** Uout_data = new float * [uv_height];
+    float ** Vout_data = new float * [uv_height];
 
     for (int row = 0; row<uv_height; row++){
         Y_data[row] = new float [uv_width];
         U_data[row] = new float [uv_width];
         V_data[row] = new float [uv_width];
+        Uout_data[row] = new float [uv_width];
+        Vout_data[row] = new float [uv_width];
     }
 
 
@@ -147,7 +152,9 @@ int main() {
         //    ----------------------  Update Data Buffer --------------------------- //
         if (i < 3) {
             std::cout << "pass" << std::endl;
-        } else if (i == 3) { // -------- initialization of frames ---------- //
+        }
+        else if (i == 3) {
+            // -------- initialization of frames ---------- //
             for (int ii = 0; ii < Nums; ++ii) {
                 memcpy(yuvImage_seq[ii].data, inBuffer + (ii) * inFrameSize, inFrameSize);
                 memcpy(y_seq[ii].data, inBuffer + (ii) * inFrameSize, yFrameSize);
@@ -159,17 +166,18 @@ int main() {
             rgbImage_seq[3].copyTo(rgbImage_current);
 // －－－－－－－－－－－－－－－　Convert the YUV420 Data to 2-D Array for Pre Color Noise Reduction －－－－－－－－－－－－－//
             //ofstream Y_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/Y_ds.txt"),U_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/U_ds.txt"),V_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/V_ds.txt");
+            ofstream Y_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/Y_ds.txt"),U_dn("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/U_dn.txt"),V_dn("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/V_dn.txt");
             cv::Mat y_seq0_ds;
             y_seq0_ds.create(uv_height,uv_width,CV_8UC1);
             cv::Size ds_size(uv_width,uv_height);
             cv::resize(y_seq[0],y_seq0_ds,ds_size);
             for(int row = 0; row<uv_height; row++)
                 for(int col = 0; col <uv_width; col++) {
-            //        Y_ds<<(int)y_seq0_ds.at<uchar>(row, col);
-            //       Y_ds<<" ";
+                    Y_ds<<(int)y_seq0_ds.at<uchar>(row, col);
+                   Y_ds<<" ";
                     Y_data[row][col] = (float)y_seq0_ds.at<uchar>(row, col);
-            //        if (col==uv_width-1)
-            //            Y_ds<<std::endl;
+                    if (col==uv_width-1)
+                        Y_ds<<std::endl;
                 }
             //Y_ds.close();
             // －－－－－－－－－－－－－－－－－－－－－－－－－－－ 从yuvImage_seq中获取ＵＶ的数据　－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－//
@@ -220,10 +228,27 @@ int main() {
             exit(0);
 #endif
             // －－－－－－－－－－－－－－－－－－－　Do Pre Color Noise Reduction －－－－－－－－－－－－－－－－－－－－　//
+            CNR_Spatial_Top(cnr_para,       // Filtering parameter
+                    Y_data,     // guided image --- padded
+                    U_data,     // noisy  image --- Padded
+                    V_data,     // noisy  image --- Padded
+                    Uout_data,
+                    Vout_data);
+            for(int row_uv = 0; row_uv<uv_height; row_uv++){
+                for(int col_uv = 0; col_uv<uv_width; col_uv++){
+                    U_dn<<(int)(Uout_data[row_uv][col_uv]+0.5);
+                    U_dn<<" ";
+                    V_dn<<(int)(Vout_data[row_uv][col_uv]+0.5);
+                    V_dn<<" ";
+                    if(col_uv==uv_width-1){
+                        U_dn<<std::endl;
+                        V_dn<<std::endl;
+                    }
+                }
+            }
+            exit(0);
 
-
-
-        } else {
+        } else { // i > 3 //
             // ------------- update the frame buffer and current frame -------------- //
             for (int ii = 1; ii < Nums; ++ii) {
                 yuvImage_seq[ii].copyTo(yuvImage_seq[ii - 1]);

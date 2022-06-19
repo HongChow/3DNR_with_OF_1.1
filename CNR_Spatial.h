@@ -33,5 +33,6 @@ void CNR_Spatial_Top(CNR_Spatial_para cnr_para,       // Filtering parameter
                      float **fpI_Ori,     // guided image --- padded
                      float **fpPU_Ori,     // noisy  image --- Padded
                      float **fpPV_Ori,     // noisy  image --- Padded
-                     float **fpO);
+                     float **fpOU,
+                     float **fpOV);
 #endif //INC_3DNR_OF_CNR_SPATIAL_H
