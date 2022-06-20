@@ -325,7 +325,7 @@ void Spatial_Temperal_Denoise(cv::Mat rgbImageW_seq[],cv::Mat current_rgbImage,f
             std::cout<<"the coordinates is finished @ y= "<<y <<std::endl;
             int jmin = MAX(y - radius_search, radius_block);
             int jmax = MIN(y + radius_search, height - 1 - radius_block);
-            float total_Fetch3D_Time = 0.0f,total_PCA_Time = 0.0f;
+//---call time            float total_Fetch3D_Time = 0.0f,total_PCA_Time = 0.0f;
             for (int x = radius_block; x < width - radius_block - 1; x++) {
                 int imin = MAX(x - radius_search, radius_block);
                 int imax = MIN(x + radius_search, width - 1 - radius_block);
@@ -335,16 +335,16 @@ void Spatial_Temperal_Denoise(cv::Mat rgbImageW_seq[],cv::Mat current_rgbImage,f
                 if(y==235)
                     std::cout<<"--------- x =  "<<x<<" ----------"<<std::endl;
 #endif
-                auto beforeFetch3DTime = std::chrono::steady_clock::now();
+//---call time                auto beforeFetch3DTime = std::chrono::steady_clock::now();
                 std::vector<struct patch_selected> Blocks_Selected = get_block_differences(rgbImageW_seq,
                                                                                            current_rgbImage, R_Warped,G_Warped,B_Warped,y, x, jmin,
                                                                                            jmax, imin, imax,
                                                                                            radius_block, nums_sequence,
                                                                                            npts);
-                auto afterFetch3DTime = std::chrono::steady_clock::now();
-                double duration_millsecond = std::chrono::duration<double, std::milli>(afterFetch3DTime - beforeFetch3DTime).count();
-                //std::cout <<"get_block_differences"<< duration_millsecond << "毫秒" << std::endl;
-                total_Fetch3D_Time+=duration_millsecond;
+//---call time                auto afterFetch3DTime = std::chrono::steady_clock::now();
+//---call time                double duration_millsecond = std::chrono::duration<double, std::milli>(afterFetch3DTime - beforeFetch3DTime).count();
+//---call time                std::cout <<"get_block_differences"<< duration_millsecond << "毫秒" << std::endl;
+//---call time                total_Fetch3D_Time+=duration_millsecond;
                 std::vector<struct patch_selected> Blocks_Denoised;
                 for (int i = 0; i < Blocks_Selected.size(); i++) {
                     Blocks_Denoised.push_back(Blocks_Selected[i]);
@@ -441,7 +441,7 @@ void Spatial_Temperal_Denoise(cv::Mat rgbImageW_seq[],cv::Mat current_rgbImage,f
                                 mean_3D_Blocks[((m * block_size) + n) * channels + c] = block_mean_vects[c].at<float>(m,
                                                                                                                       n);
                             }
-                    auto beforePCATime = std::chrono::steady_clock::now();
+//---call time                    auto beforePCATime = std::chrono::steady_clock::now();
                     PCADenoise(input_3D_Blocks,
                                mean_3D_Blocks,
                                fSigma,
@@ -449,9 +449,9 @@ void Spatial_Temperal_Denoise(cv::Mat rgbImageW_seq[],cv::Mat current_rgbImage,f
                                npts,
                                points_num,
                                output_3D_Blocks);
-                    auto afterPCATime = std::chrono::steady_clock::now();
-                    double duration_millsecondPCA = std::chrono::duration<double, std::milli>(afterPCATime - beforePCATime).count();
-                    total_PCA_Time+=duration_millsecondPCA;
+//---call time                    auto afterPCATime = std::chrono::steady_clock::now();
+//---call time                    double duration_millsecondPCA = std::chrono::duration<double, std::milli>(afterPCATime - beforePCATime).count();
+//---call time                    total_PCA_Time+=duration_millsecondPCA;
                     //std::cout <<"PCA:"<< duration_millsecondPCA << "毫秒" << std::endl;
 #ifdef DEBUG
                     if(y==2 && x==346)
@@ -511,8 +511,8 @@ void Spatial_Temperal_Denoise(cv::Mat rgbImageW_seq[],cv::Mat current_rgbImage,f
                 Aggregation( Blocks_Denoised,Weights_Mask, OutPutImages, y,  x, radius_block);
                 delete vmean;
             }
-            std::cout <<"avrage PCA time :"<< total_PCA_Time/(height-radius_block-1-radius_block)<< "毫秒" << std::endl;
-            std::cout <<"avrage Fetch 3D time :"<< total_Fetch3D_Time/(height-radius_block-1-radius_block)<< "毫秒" << std::endl;
+//---call time            std::cout <<"avrage PCA time :"<< total_PCA_Time/(height-radius_block-1-radius_block)<< "毫秒" << std::endl;
+//---call time            std::cout <<"avrage Fetch 3D time :"<< total_Fetch3D_Time/(height-radius_block-1-radius_block)<< "毫秒" << std::endl;
         }
 
 
