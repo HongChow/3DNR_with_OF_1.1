@@ -35,6 +35,7 @@ using namespace cv;
 const char * inpath = "hall_monitor_cif.yuv";
 int width = 352, height = 288;
 #endif
+#define PreCNR
 #define DEBUG_CNR
 int uv_height = height>>1;
 int uv_width = width>>1;
@@ -51,7 +52,8 @@ cv::Mat hsv_split[3], hsv;
 cv::Ptr<DenseOpticalFlow> flow_algorithm = cv::DISOpticalFlow::create(cv::DISOpticalFlow::PRESET_MEDIUM);
 cv::Mat yuvImage_pre, yuvImage_cur,rgbImage_pre,rgbImage_cur,y_pre,y_cur;
 cv::Mat yuvImage_seq[Nums],rgbImage_seq[Nums],y_seq[Nums],rgbImageW_seq[Nums-1];
-cv::Mat rgbImage_current,rgbImage_Denoised;
+cv::Mat rgbImageCNR_seq[Nums];
+cv::Mat rgbImage_current,rgbImageCNR_current,rgbImage_Denoised;
 cv::Mat flow_seq[Nums-1],flow_inv_seq[Nums-1],flow_rgb[Nums-1],divergence_seq[Nums-1],maskdist_seq[Nums -1],outmask_seq[Nums-1];
 std::vector<cv::Mat> OutPutImages(3); // for denoised frames of each channels//
 std::vector<cv::Mat> CurrentImagesVectors(3);
@@ -115,6 +117,7 @@ int main() {
         yuvImage_seq[i].create(height * 3 / 2, width, CV_8U);
         y_seq[i].create(height, width, CV_8U);
         rgbImage_seq[i].create(height, width, CV_8UC3);
+        rgbImageCNR_seq[i].create(height, width, CV_8UC3);
         //rgbImageW_seq[i].create(height, width, CV_8UC3);
         //std::cout << rgbImage_seq[i].channels() << " -             -- -        -" << std::endl;
     }
@@ -127,22 +130,6 @@ int main() {
         rgbImageW_seq[i].create(height, width, CV_8UC3);
     }
     int frameNum = size / inFrameSize;
-
-
-    float ** Y_data = new float * [uv_height];
-    float ** U_data = new float * [uv_height];
-    float ** V_data = new float * [uv_height];
-    float ** Uout_data = new float * [uv_height];
-    float ** Vout_data = new float * [uv_height];
-
-    for (int row = 0; row<uv_height; row++){
-        Y_data[row] = new float [uv_width];
-        U_data[row] = new float [uv_width];
-        V_data[row] = new float [uv_width];
-        Uout_data[row] = new float [uv_width];
-        Vout_data[row] = new float [uv_width];
-    }
-
 
     for (int i = 0; i < frameNum; ++i) {
         //std::cout << "------------ current frame is ------------------ " << i << "  --------------\n" << std::endl;
@@ -165,88 +152,68 @@ int main() {
             }
             rgbImage_seq[3].copyTo(rgbImage_current);
 // －－－－－－－－－－－－－－－　Convert the YUV420 Data to 2-D Array for Pre Color Noise Reduction －－－－－－－－－－－－－//
-            //ofstream Y_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/Y_ds.txt"),U_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/U_ds.txt"),V_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/V_ds.txt");
-            ofstream Y_ds("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/Y_ds.txt"),U_dn("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/U_dn.txt"),V_dn("/media/hong/62CC6F80CC6F4D7B/3DNR/Python/V_dn.txt");
-            cv::Mat y_seq0_ds;
-            y_seq0_ds.create(uv_height,uv_width,CV_8UC1);
+            float ** Y_data = new float * [uv_height];
+            float ** U_data = new float * [uv_height];
+            float ** V_data = new float * [uv_height];
+            float ** Uout_data = new float * [uv_height];
+            float ** Vout_data = new float * [uv_height];
+
+            for (int row = 0; row<uv_height; row++){
+                Y_data[row] = new float [uv_width];
+                U_data[row] = new float [uv_width];
+                V_data[row] = new float [uv_width];
+                Uout_data[row] = new float [uv_width];
+                Vout_data[row] = new float [uv_width];
+            }
+            cv::Mat y_seq_ds;
+            y_seq_ds.create(uv_height,uv_width,CV_8UC1);
             cv::Size ds_size(uv_width,uv_height);
-            cv::resize(y_seq[0],y_seq0_ds,ds_size);
-            for(int row = 0; row<uv_height; row++)
-                for(int col = 0; col <uv_width; col++) {
-                    Y_ds<<(int)y_seq0_ds.at<uchar>(row, col);
-                   Y_ds<<" ";
-                    Y_data[row][col] = (float)y_seq0_ds.at<uchar>(row, col);
-                    if (col==uv_width-1)
-                        Y_ds<<std::endl;
-                }
-            //Y_ds.close();
-            // －－－－－－－－－－－－－－－－－－－－－－－－－－－ 从yuvImage_seq中获取ＵＶ的数据　－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－//
-            for(int row_uv = 0; row_uv<uv_height; row_uv++){
-                int row_buffer = row_uv>>1;
-                int row_half_flag = row_uv%2;
-                for(int col_uv = 0; col_uv<uv_width; col_uv++){
-                    int col_buffer = row_half_flag==0?col_uv:col_uv+uv_width;
-                    U_data[row_uv][col_uv] = (float)yuvImage_seq[0].at<uchar>(1080+row_buffer, col_buffer);
-                    V_data[row_uv][col_uv] = (float)yuvImage_seq[0].at<uchar>(1350+row_buffer, col_buffer);;
-            //        U_ds<<(int)yuvImage_seq[0].at<uchar>(1080+row_buffer, col_buffer);
-            //        U_ds<<" ";
-            //        V_ds<<(int)yuvImage_seq[0].at<uchar>(1350+row_buffer, col_buffer);
-            //        V_ds<<" ";
-            //        if (col_uv==uv_width-1){
-            //            U_ds<<std::endl;
-            //            V_ds<<std::endl;
+            for(int frame_id = 0; frame_id<Nums; frame_id++){
+                cv::resize(y_seq[frame_id],y_seq_ds,ds_size);
+                for(int row = 0; row<uv_height; row++)
+                    for(int col = 0; col <uv_width; col++) {
+                        Y_data[row][col] = (float)y_seq_ds.at<uchar>(row, col);
+                    }
+                // －－－－－－－－－－－－－－－－－－－－－－－－－－－ 从yuvImage_seq中获取ＵＶ的数据　－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－//
+                for(int row_uv = 0; row_uv<uv_height; row_uv++) {
+                    int row_buffer = row_uv >> 1;
+                    int row_half_flag = row_uv % 2;
+                    for (int col_uv = 0; col_uv < uv_width; col_uv++) {
+                        int col_buffer = row_half_flag == 0 ? col_uv : col_uv + uv_width;
+                        U_data[row_uv][col_uv] = (float) yuvImage_seq[0].at<uchar>(1080 + row_buffer, col_buffer);
+                        V_data[row_uv][col_uv] = (float) yuvImage_seq[0].at<uchar>(1350 + row_buffer, col_buffer);
                     }
                 }
-            //U_ds.close();
-            //V_ds.close();
-
-            //std::cout<<"test yuvImage Data: yuv_image[0].at<uchar>(0,0) = "<<(int)yuvImage_seq[0].at<uchar>(0,0)<<std::endl;
-//            exit(0);
-            //－－－－－－－－－－－－－－－－－－－－－－－ 直接从inBuffer中获取ＵＶ的数据似乎有点问题Ｕ的数值是负数　－－－－－－－－－－－－－－－－－－－－－－－－－－//
-#if 0
-            for(int row_uv = 0; row_uv<uv_height; row_uv++){
-                int row_buffer = row_uv>>1;
-                int row_half_flag = row_uv%2;
-                for(int col_uv = 0; col_uv<uv_width; col_uv++){
-                    int col_buffer = row_half_flag==0?col_uv:col_uv+uv_width;
-                    U_data[row_uv][col_uv] = (int)inBuffer[width * height+row_buffer*width+col_buffer];
-                    V_data[row_uv][col_uv] = (int)inBuffer[width * height+width * height>>2+row_buffer*width+col_buffer];
-                    U_ds<<(int)inBuffer[width * height+row_buffer*width+col_buffer];
-                    U_ds<<" ";
-                    V_ds<<(int)inBuffer[width * height+width * height>>2+row_buffer*width+col_buffer];
-                    V_ds<<" ";
-                    if (col_uv==uv_width-1){
-                        U_ds<<std::endl;
-                        V_ds<<std::endl;
+                // －－－－－－－－－－－－－－－－－－－　Do Pre Color Noise Reduction －－－－－－－－－－－－－－－－－－－－　//
+                CNR_Spatial_Top(cnr_para,       // Filtering parameter
+                                Y_data,     // guided image --- padded
+                                U_data,     // noisy  image --- Padded
+                                V_data,     // noisy  image --- Padded
+                                Uout_data,
+                                Vout_data);
+                // －－－－－－－－－－－－　Save The Pre Color Noise Reduction to YUV Mat Data －－－－－－－－－－－－－－　//
+                cv::Mat yuvImage_preCNR;
+                yuvImage_seq[frame_id].copyTo(yuvImage_preCNR);
+                yuvImage_preCNR.create(height*3>>1,width,CV_8U);
+                for(int row_uv = 0; row_uv<uv_height; row_uv++){
+                    int row_buffer = row_uv>>1;
+                    int row_half_flag = row_uv%2;
+                    for(int col_uv = 0; col_uv<uv_width; col_uv++){
+                        int col_buffer = row_half_flag == 0 ? col_uv : col_uv + uv_width;
+                        yuvImage_preCNR.at<uchar>(1080+row_buffer, col_buffer) = Uout_data[row_uv][col_uv];
+                        yuvImage_preCNR.at<uchar>(1350 + row_buffer, col_buffer) = Vout_data[row_uv][col_uv];
                     }
                 }
+                cv::Mat rgbImage_CNR;
+                cv::cvtColor(yuvImage_preCNR, rgbImage_CNR, COLOR_YUV2RGB_YV12);
+                std::string rgbImage_CNR_name = "rgbImage_CNR"+std::to_string(frame_id)+".png";
+                std::string rgbImagename = "rgbImage_"+std::to_string(frame_id)+".png";
+                cv::imwrite(rgbImage_CNR_name,rgbImage_CNR);
+                cv::imwrite(rgbImagename,rgbImage_seq[frame_id]);
+                rgbImage_CNR.copyTo(rgbImageCNR_seq[frame_id]);
             }
-
-            U_ds.close();
-            V_ds.close();
-            std::cout<<"out the ds yuv output"<<std::endl;
-            exit(0);
-#endif
-            // －－－－－－－－－－－－－－－－－－－　Do Pre Color Noise Reduction －－－－－－－－－－－－－－－－－－－－　//
-            CNR_Spatial_Top(cnr_para,       // Filtering parameter
-                    Y_data,     // guided image --- padded
-                    U_data,     // noisy  image --- Padded
-                    V_data,     // noisy  image --- Padded
-                    Uout_data,
-                    Vout_data);
-            for(int row_uv = 0; row_uv<uv_height; row_uv++){
-                for(int col_uv = 0; col_uv<uv_width; col_uv++){
-                    U_dn<<(int)(Uout_data[row_uv][col_uv]+0.5);
-                    U_dn<<" ";
-                    V_dn<<(int)(Vout_data[row_uv][col_uv]+0.5);
-                    V_dn<<" ";
-                    if(col_uv==uv_width-1){
-                        U_dn<<std::endl;
-                        V_dn<<std::endl;
-                    }
-                }
-            }
-            exit(0);
+            rgbImageCNR_seq[3].copyTo(rgbImageCNR_current);
+            //exit(0);
 
         } else { // i > 3 //
             // ------------- update the frame buffer and current frame -------------- //
@@ -274,7 +241,11 @@ int main() {
                     flow_algorithm->calc(y_seq[middle], y_seq[middle + ii], flow_seq[flow_idx]);
                     flow_rgb[flow_idx] = flow_rgb_cal(flow_seq[flow_idx]);
                     //std::cout<<rgbImage_seq[middle+ii].channels()<<" -             -- -        -"<<std::endl;
+#ifdef PreCNR
+                    rgbImageW_seq[flow_idx] = WarpFrame(rgbImageCNR_seq[middle + ii], flow_seq[flow_idx], width, height);
+#else
                     rgbImageW_seq[flow_idx] = WarpFrame(rgbImage_seq[middle + ii], flow_seq[flow_idx], width, height);
+#endif
                     // ------------------ Calculation of OcclusionMask -------------------- //
                     // -------- step1 calculation divergence ----------- //
                     divergence_seq[flow_idx] = calculate_divergence(flow_seq[flow_idx],width,height);
@@ -341,6 +312,20 @@ int main() {
                         cv::imwrite(rgb_name+".png", rgbImage_seq[middle]);
                     }
                 }
+#ifdef  PreCNR
+                cv::split(rgbImage_current,CurrentImagesVectors);
+                auto beforeCoreTime = std::chrono::steady_clock::now();
+                Spatial_Temperal_Denoise(rgbImageW_seq, rgbImageCNR_current, R_Warped,G_Warped,B_Warped,para3D,Weights_Mask,OutPutImages);
+                auto afterCoreTime = std::chrono::steady_clock::now();
+                double duration_millsecondCore = std::chrono::duration<double, std::milli>(afterCoreTime - beforeCoreTime).count();
+                std::cout <<"Spatial_Temperal_Denoise"<< duration_millsecondCore << "毫秒" << std::endl;
+                // -------------Denoise Results Normalized --------------- //
+                std::cout<<" ---------- running finished before Normalize -----------------"<<std::endl;
+                NormalizeOutput(rgbImage_current,Weights_Mask,OutPutImages,OutPutFrame,height,width);
+                std::cout<<" ---------- running finished before saving -----------------"<<std::endl;
+                cv::imwrite("/media/hong/62CC6F80CC6F4D7B/3DNR/3DNR_with_OF_1.1/build/DenoisedwoPreCNR.png",OutPutFrame);
+                exit(0);
+#else
                 cv::split(rgbImage_current,CurrentImagesVectors);
                 auto beforeCoreTime = std::chrono::steady_clock::now();
                 Spatial_Temperal_Denoise(rgbImageW_seq, rgbImage_current, R_Warped,G_Warped,B_Warped,para3D,Weights_Mask,OutPutImages);
@@ -349,10 +334,12 @@ int main() {
                 std::cout <<"Spatial_Temperal_Denoise"<< duration_millsecondCore << "毫秒" << std::endl;
                 // -------------Denoise Results Normalized --------------- //
                 std::cout<<" ---------- running finished before Normalize -----------------"<<std::endl;
-                //NormalizeOutput(rgbImage_current,Weights_Mask,OutPutImages,OutPutFrame,height,width);
+                NormalizeOutput(rgbImage_current,Weights_Mask,OutPutImages,OutPutFrame,height,width);
                 std::cout<<" ---------- running finished before saving -----------------"<<std::endl;
-                //cv::imwrite("/media/hong/62CC6F80CC6F4D7B/3DNR/Implementation/3DNR_with_OF/build/Denoised.png",OutPutFrame);
-                //cv::imwrite("/home/hong/3DNR/3DNR_with_OF/build/Denoised_Results/Denoised.png",OutPutFrame);
+                //cv::imwrite("/media/hong/62CC6F80CC6F4D7B/3DNR/Implementation/3DNR_with_OF_1.1/build/DenoisedwoPreCNR.png",OutPutFrame);
+#endif
+
+                //cv::imwrite("/home/hong/3DNR/3DNR_with_OF_1.1/build/Denoised_Results/Denoised.png",OutPutFrame);
 
                 //exit(0);
             }
