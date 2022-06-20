@@ -110,7 +110,7 @@ int main() {
     para3D.oflat = 0.85f;para3D.osigma=5.0f;para3D.ofpca = 1.8f;
     //===== Param init for Spatial CNR ===== //
     CNR_Spatial_para cnr_para;
-    cnr_para.iWidth = width>>1;cnr_para.iHeight = height>>1; cnr_para.ratio_x = 2; cnr_para.ratio_y=2; cnr_para.r_patch_v = 12;cnr_para.r_patch_h=12;cnr_para.esp=72;
+    cnr_para.iWidth = width>>1;cnr_para.iHeight = height>>1; cnr_para.ratio_x = 2; cnr_para.ratio_y=2; cnr_para.r_patch_v = 4;cnr_para.r_patch_h=8;cnr_para.esp=32;
 
     // --------- allocate memory for adjacent frames -------- //
     for (int i = 0; i < Nums; i++) {
@@ -206,7 +206,7 @@ int main() {
                 }
                 cv::Mat rgbImage_CNR;
                 cv::cvtColor(yuvImage_preCNR, rgbImage_CNR, COLOR_YUV2RGB_YV12);
-                std::string rgbImage_CNR_name = "rgbImage_CNR"+std::to_string(frame_id)+".png";
+                std::string rgbImage_CNR_name = "rgbImage_CNR_vRadius_"+std::to_string(cnr_para.r_patch_v)+"_eps_"+std::to_string((int)cnr_para.esp)+"_"+std::to_string(frame_id)+".png";
                 std::string rgbImagename = "rgbImage_"+std::to_string(frame_id)+".png";
                 cv::imwrite(rgbImage_CNR_name,rgbImage_CNR);
                 cv::imwrite(rgbImagename,rgbImage_seq[frame_id]);
@@ -323,7 +323,10 @@ int main() {
                 std::cout<<" ---------- running finished before Normalize -----------------"<<std::endl;
                 NormalizeOutput(rgbImage_current,Weights_Mask,OutPutImages,OutPutFrame,height,width);
                 std::cout<<" ---------- running finished before saving -----------------"<<std::endl;
-                cv::imwrite("/media/hong/62CC6F80CC6F4D7B/3DNR/3DNR_with_OF_1.1/build/DenoisedwoPreCNR.png",OutPutFrame);
+                //cv::imwrite("/media/hong/62CC6F80CC6F4D7B/3DNR/3DNR_with_OF_1.1/build/DenoisedwoPreCNR.png",OutPutFrame);
+                cv::imwrite("/home/hong/3DNR/3DNR_with_OF_1.1/build/Denoised_Results/DenoisedwoPreCNR2.png",OutPutFrame);
+                cv::imwrite("DenoisedwoPreCNR2.png",OutPutFrame);
+
                 exit(0);
 #else
                 cv::split(rgbImage_current,CurrentImagesVectors);
