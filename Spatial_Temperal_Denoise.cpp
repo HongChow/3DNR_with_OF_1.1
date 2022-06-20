@@ -259,8 +259,10 @@ void Calculate_Mean_Blocks(std::vector<struct patch_selected> Blocks_Selected,in
 void Aggregation(std::vector<struct patch_selected> Blocks_Denoised,float ** Weights_Mask,std::vector<cv::Mat>& OutPutImages,int y, int x, int radius){
     int start_y = y - radius;
     int start_x = x - radius;
-    for (int i = 0; i< Blocks_Denoised.size();i++){
-        if(Blocks_Denoised[i].seq_idx==3){
+    int counter = 0;
+    for (int i = 0; ((i< Blocks_Denoised.size())and(counter<36));i++){
+        //if(Blocks_Denoised[i].seq_idx==3){
+        if(counter<36){
             for(int m = 0; m<radius; m++)
                 for(int n = 0; n<radius; n++){
                     // ---------- for debug -------------//
