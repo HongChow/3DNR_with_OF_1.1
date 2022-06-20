@@ -324,7 +324,7 @@ int main() {
                 NormalizeOutput(rgbImage_current,Weights_Mask,OutPutImages,OutPutFrame,height,width);
                 std::cout<<" ---------- running finished before saving -----------------"<<std::endl;
                 //cv::imwrite("/media/hong/62CC6F80CC6F4D7B/3DNR/3DNR_with_OF_1.1/build/DenoisedwoPreCNR.png",OutPutFrame);
-                cv::imwrite("/home/hong/3DNR/3DNR_with_OF_1.1/build/Denoised_Results/DenoisedwoPreCNR2.png",OutPutFrame);
+                cv::imwrite("/home/hong/3DNR/3DNR_with_OF_1.1/build/Denoised_Results/DenoisedwoPreCNR3.png",OutPutFrame);
                 cv::imwrite("DenoisedwoPreCNR2.png",OutPutFrame);
 
                 exit(0);
