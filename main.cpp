@@ -27,9 +27,10 @@
 #include "CNR_Spatial.h"
 using namespace std;
 using namespace cv;
-#define CISTA
+//#define CISTA
 #ifdef CISTA
-    const char * inpath = "1.yuv";
+    //const char * inpath = "cj1_part.yuv";
+    const char * inpath = "cj2_ori.yuv";
     int width = 1920, height = 1080;
 #else
 const char * inpath = "hall_monitor_cif.yuv";
@@ -240,6 +241,8 @@ int main() {
                     int flow_idx = ii + middle > 3 ? ii + middle - 1 : ii + middle;
                     flow_algorithm->calc(y_seq[middle], y_seq[middle + ii], flow_seq[flow_idx]);
                     flow_rgb[flow_idx] = flow_rgb_cal(flow_seq[flow_idx]);
+                    std::string DISFlow_name = "DISFlow_" + std::to_string(ii);
+                    cv::imwrite(DISFlow_name+".png",flow_rgb[flow_idx]);
                     //std::cout<<rgbImage_seq[middle+ii].channels()<<" -             -- -        -"<<std::endl;
 #ifdef PreCNR
                     rgbImageW_seq[flow_idx] = WarpFrame(rgbImageCNR_seq[middle + ii], flow_seq[flow_idx], width, height);
@@ -263,9 +266,11 @@ int main() {
 
                     // ---------- Step1. Get 3D Blocks ----------- //
                 }
+
                 //else
                 //    rgbImage_seq[middle].copyTo(rgbImageW_seq[middle]); ---这不对
             }
+            //exit(0);
             if (i==3) {
                 std::vector<std::vector<cv::Mat >> rgbImage_W_Vects(Nums-1);
                 for (int t = 0; t < Nums-1; t++) {
@@ -324,8 +329,8 @@ int main() {
                 NormalizeOutput(rgbImage_current,Weights_Mask,OutPutImages,OutPutFrame,height,width);
                 std::cout<<" ---------- running finished before saving -----------------"<<std::endl;
                 //cv::imwrite("/media/hong/62CC6F80CC6F4D7B/3DNR/3DNR_with_OF_1.1/build/DenoisedwoPreCNR.png",OutPutFrame);
-                cv::imwrite("/home/hong/3DNR/3DNR_with_OF_1.1/build/Denoised_Results/DenoisedwoPreCNR3.png",OutPutFrame);
-                cv::imwrite("DenoisedwoPreCNR2.png",OutPutFrame);
+                //cv::imwrite("/home/hong/3DNR/3DNR_with_OF_1.1/build/Denoised_Results/DenoisedwoPreCNR3.png",OutPutFrame);
+                cv::imwrite("Denoised_cj2_PreCNR3.png",OutPutFrame);
 
                 exit(0);
 #else
